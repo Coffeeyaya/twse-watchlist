@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>台股觀察與篩選工具</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>台股觀察與篩選工具</h1>
+    <p class="disclaimer" id="disclaimer">載入中…</p>
+    <p class="updated" id="updated"></p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <input id="search" type="text" placeholder="搜尋股票代號或名稱…" autocomplete="off" />
+      <div class="filter-group">
+        <label><input type="checkbox" id="filter-golden-cross" /> 黃金交叉</label>
+        <label><input type="checkbox" id="filter-death-cross" /> 死亡交叉</label>
+        <label><input type="checkbox" id="filter-oversold" /> RSI 超賣</label>
+        <label><input type="checkbox" id="filter-overbought" /> RSI 超買</label>
+        <label><input type="checkbox" id="filter-cheap" /> 估值偏低（本身歷史）</label>
+      </div>
+      <span id="result-count" class="result-count"></span>
+    </section>
+
+    <section class="table-wrap">
+      <table id="stock-table">
+        <thead>
+          <tr>
+            <th data-sort="code">代號</th>
+            <th data-sort="name">名稱</th>
+            <th data-sort="close">收盤價</th>
+            <th data-sort="change">漲跌</th>
+            <th data-sort="pe">本益比</th>
+            <th data-sort="pb">股價淨值比</th>
+            <th data-sort="dividend_yield">殖利率</th>
+            <th data-sort="rsi14">RSI(14)</th>
+            <th>均線狀態</th>
+            <th>估值標籤</th>
+          </tr>
+        </thead>
+        <tbody id="stock-table-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="detail-overlay" class="overlay hidden">
+    <div class="detail-panel">
+      <button id="detail-close" class="close-btn" aria-label="關閉">×</button>
+      <h2 id="detail-title"></h2>
+      <p id="detail-sub" class="detail-sub"></p>
+      <canvas id="detail-chart" height="220"></canvas>
+      <div id="detail-labels" class="detail-labels"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>資料來源：台灣證券交易所（TWSE）OpenAPI，僅限上市（TWSE）股票，每日收盤後更新一次。</p>
+    <p class="disclaimer">本工具僅呈現公開數據與依規則計算的描述性標籤，不構成任何買賣建議，投資決策請自行判斷。</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
