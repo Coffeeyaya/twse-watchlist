@@ -24,6 +24,7 @@ from pathlib import Path
 import requests
 
 import indicators as indicators_mod
+import labels
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -103,9 +104,15 @@ def send_line_push(messages: list[str]) -> None:
         return
 
     recipients = [r.strip() for r in recipient_ids_raw.split(",") if r.strip()]
-    text = "\n".join(messages)
-    if len(text) > MAX_LINE_TEXT_LEN:
-        text = text[:MAX_LINE_TEXT_LEN] + "\n…(訊息過長，已截斷)"
+
+    # Reserve room for the disclaimer BEFORE truncating the body, so it always survives — per
+    # plan.md, every output surface must carry it, so it can't be the part that gets cut.
+    disclaimer_suffix = f"\n\n{labels.DISCLAIMER}"
+    body_limit = MAX_LINE_TEXT_LEN - len(disclaimer_suffix)
+    body = "\n".join(messages)
+    if len(body) > body_limit:
+        body = body[:body_limit] + "\n…(訊息過長，已截斷)"
+    text = body + disclaimer_suffix
 
     for user_id in recipients:
         resp = requests.post(

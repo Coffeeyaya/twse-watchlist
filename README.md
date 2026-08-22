@@ -22,7 +22,8 @@ following the collaboration protocol at `~/Desktop/CSLAB/collaboration.md`:
 ```
 batch/                   Python job, runs daily via GitHub Actions
 ├── fetch_market.py       TWSE OpenAPI: STOCK_DAY_ALL + BWIBBU_ALL (all TWSE-listed stocks, no key)
-├── fetch_watchlist_news.py   MOPS announcements + Google News RSS, watchlist tickers only
+├── fetch_watchlist_news.py   Google News RSS, watchlist tickers only (MOPS announcements were
+│                              descoped from v1 — needs a headless browser, see decisions.md)
 ├── indicators.py          SMA20/60, MA cross, RSI14, MACD
 ├── labels.py              Percentile-based valuation labels, RSI-band labels
 ├── alerts.py              Evaluates trigger rules, pushes via LINE Messaging API
