@@ -1,0 +1,43 @@
+name: Historical backfill (manual)
+
+# One-time (or re-run-if-needed) job — NOT part of the daily cron. Populates data/history/*.json
+# from TWSE's classic date-parameterized endpoints. Takes ~30-60 minutes (rate-limited, polite
+# delay between requests). Safe to re-run: backfill_history.py skips dates already on disk.
+
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "Years of history to backfill"
+        default: "3"
+      delay:
+        description: "Seconds between requests (be polite to twse.com.tw)"
+        default: "1.0"
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run backfill
+        working-directory: batch
+        run: python backfill_history.py --years ${{ inputs.years }} --delay ${{ inputs.delay }}
+
+      - name: Commit history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/history/
+          git diff --cached --quiet && echo "No history changes" || git commit -m "Historical backfill"
+          git push
