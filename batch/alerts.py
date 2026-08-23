@@ -10,8 +10,9 @@ Triggers (only fire on the day the condition first becomes true, not every day i
   data/seen_announcements.json so a given announcement only ever fires once.
 
 Contract (see decisions.md for the human setup this depends on): env vars
-`LINE_CHANNEL_ACCESS_TOKEN` and `LINE_RECIPIENT_USER_IDS` (comma-separated LINE user IDs). Not
-live-tested — the LINE Official Account doesn't exist yet.
+`LINE_CHANNEL_ACCESS_TOKEN` and `LINE_RECIPIENT_USER_IDS` (comma-separated LINE user IDs). While
+`LINE_TEST_MODE` is on, `LINE_TEST_RECIPIENT_USER_IDS` is read instead — not in addition to —
+`LINE_RECIPIENT_USER_IDS`, so test pushes never reach the real recipient list.
 """
 
 from __future__ import annotations
@@ -102,24 +103,45 @@ def evaluate_announcement_triggers(
             if ann["id"] in seen_ids:
                 continue
             newly_seen.add(ann["id"])
-            messages.append(f"📢 {code} {ann.get('company_name', '')}：{ann['title']}")
+            message = f"📢 {code} {ann.get('company_name', '')}：{ann['title']}"
+            link = ann.get("link", "")
+            if link:
+                message += f"\n{link}"
+            messages.append(message)
     return messages, newly_seen
 
 
 def send_line_push(messages: list[str]) -> None:
     token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
-    recipient_ids_raw = os.environ.get("LINE_RECIPIENT_USER_IDS", "")
+    test_mode = _is_test_mode()
+
+    if test_mode:
+        # While testing, route to LINE_TEST_RECIPIENT_USER_IDS only — never fall back to the real
+        # recipient list, or a push meant for testing would broadcast to everyone (dad included).
+        recipient_ids_raw = os.environ.get("LINE_TEST_RECIPIENT_USER_IDS", "")
+        if not recipient_ids_raw.strip():
+            log.warning(
+                "LINE_TEST_MODE is on but LINE_TEST_RECIPIENT_USER_IDS is not set — skipping "
+                "push (not falling back to the real recipient list)"
+            )
+            return
+    else:
+        recipient_ids_raw = os.environ.get("LINE_RECIPIENT_USER_IDS", "")
+
     if not token or not recipient_ids_raw:
         log.warning("LINE not configured (missing token or recipient IDs) — skipping push")
         return
 
     recipients = [r.strip() for r in recipient_ids_raw.split(",") if r.strip()]
+    if not recipients:
+        log.warning("No valid recipient IDs after parsing — skipping push")
+        return
 
     # Reserve room for the test-mode marker and disclaimer BEFORE truncating the body, so both
     # always survive — per plan.md, every output surface must carry the disclaimer, and while
     # LINE_TEST_MODE is on the marker matters just as much (it's what stops the recipient from
     # reading a push as confirmed/official).
-    prefix = f"{TEST_MODE_MARKER}\n\n" if _is_test_mode() else ""
+    prefix = f"{TEST_MODE_MARKER}\n\n" if test_mode else ""
     disclaimer_suffix = f"\n\n{labels.DISCLAIMER}"
     body_limit = MAX_LINE_TEXT_LEN - len(prefix) - len(disclaimer_suffix)
     body = "\n".join(messages)
