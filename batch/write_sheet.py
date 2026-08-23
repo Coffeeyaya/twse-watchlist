@@ -25,6 +25,8 @@ import os
 import gspread
 from google.oauth2.service_account import Credentials
 
+import labels
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
@@ -81,8 +83,9 @@ def _overwrite_tab(sheet: gspread.Spreadsheet, tab_name: str, rows: list[list]) 
         ws.clear()
     except gspread.WorksheetNotFound:
         ws = sheet.add_worksheet(title=tab_name, rows=max(len(rows) + 10, 100), cols=len(HEADER))
-    ws.update([HEADER] + rows, value_input_option=gspread.utils.ValueInputOption.raw)
-    log.info("Wrote %d rows to tab %r", len(rows), tab_name)
+    disclaimer_row = [labels.DISCLAIMER]
+    ws.update([HEADER] + rows + [disclaimer_row], value_input_option=gspread.utils.ValueInputOption.raw)
+    log.info("Wrote %d rows to tab %r (+ disclaimer)", len(rows), tab_name)
 
 
 def write_dashboard_data(dashboard_data: dict) -> None:
