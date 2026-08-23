@@ -35,6 +35,9 @@ jobs:
           # LINE push while the tool is still a trial. Flip to "false" (or delete the line) once
           # it's trusted as formal — no code change needed, see batch/alerts.py.
           LINE_TEST_MODE: "true"
+          # While LINE_TEST_MODE is on, send_line_push() reads this instead of
+          # LINE_RECIPIENT_USER_IDS, so test pushes only reach the sender, not every recipient.
+          LINE_TEST_RECIPIENT_USER_IDS: ${{ secrets.LINE_TEST_RECIPIENT_USER_IDS }}
         run: python batch/run_daily.py
 
       - name: Commit updated data
