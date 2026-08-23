@@ -35,6 +35,16 @@ SEEN_ANNOUNCEMENTS_PATH = DATA_DIR / "seen_announcements.json"
 LINE_PUSH_URL = "https://api.line.me/v2/bot/message/push"
 MAX_LINE_TEXT_LEN = 4900  # API limit is 5000; leave headroom
 
+# Set LINE_TEST_MODE=true (workflow env, not a secret — see daily.yml) while the tool is still
+# considered a trial, not formal — prepends a marker so the recipient doesn't read pushes as
+# confirmed/official yet. Unset/false is the production default; flip the workflow env line to
+# turn it off once the tool is trusted, no code change needed.
+TEST_MODE_MARKER = "🧪 測試訊息，尚未正式啟用，內容僅供測試 — 請勿依此操作"
+
+
+def _is_test_mode() -> bool:
+    return os.environ.get("LINE_TEST_MODE", "").strip().lower() in ("1", "true", "yes")
+
 
 def _rsi_band_event(history: list[dict]) -> str | None:
     closes_today = [r["close"] for r in history if r.get("close") is not None]
@@ -105,14 +115,17 @@ def send_line_push(messages: list[str]) -> None:
 
     recipients = [r.strip() for r in recipient_ids_raw.split(",") if r.strip()]
 
-    # Reserve room for the disclaimer BEFORE truncating the body, so it always survives — per
-    # plan.md, every output surface must carry it, so it can't be the part that gets cut.
+    # Reserve room for the test-mode marker and disclaimer BEFORE truncating the body, so both
+    # always survive — per plan.md, every output surface must carry the disclaimer, and while
+    # LINE_TEST_MODE is on the marker matters just as much (it's what stops the recipient from
+    # reading a push as confirmed/official).
+    prefix = f"{TEST_MODE_MARKER}\n\n" if _is_test_mode() else ""
     disclaimer_suffix = f"\n\n{labels.DISCLAIMER}"
-    body_limit = MAX_LINE_TEXT_LEN - len(disclaimer_suffix)
+    body_limit = MAX_LINE_TEXT_LEN - len(prefix) - len(disclaimer_suffix)
     body = "\n".join(messages)
     if len(body) > body_limit:
         body = body[:body_limit] + "\n…(訊息過長，已截斷)"
-    text = body + disclaimer_suffix
+    text = prefix + body + disclaimer_suffix
 
     for user_id in recipients:
         resp = requests.post(
