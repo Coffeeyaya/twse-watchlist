@@ -31,6 +31,10 @@ jobs:
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_RECIPIENT_USER_IDS: ${{ secrets.LINE_RECIPIENT_USER_IDS }}
+          # Not a secret — a plain boolean toggle. Prepends a "test, not formal" marker to every
+          # LINE push while the tool is still a trial. Flip to "false" (or delete the line) once
+          # it's trusted as formal — no code change needed, see batch/alerts.py.
+          LINE_TEST_MODE: "true"
         run: python batch/run_daily.py
 
       - name: Commit updated data
