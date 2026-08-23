@@ -77,6 +77,8 @@ def main() -> None:
     except Exception:
         log.exception("fetch_watchlist_news failed — continuing without news alerts")
 
+    write_sheet.write_watchlist_news(sheet, news_by_code)
+
     if not _line_configured():
         log.warning(
             "LINE_CHANNEL_ACCESS_TOKEN / LINE_RECIPIENT_USER_IDS not set — skipping alerts "

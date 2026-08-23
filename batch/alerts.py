@@ -103,11 +103,12 @@ def evaluate_announcement_triggers(
             if ann["id"] in seen_ids:
                 continue
             newly_seen.add(ann["id"])
-            message = f"📢 {code} {ann.get('company_name', '')}：{ann['title']}"
-            link = ann.get("link", "")
-            if link:
-                message += f"\n{link}"
-            messages.append(message)
+            # Short pointer only — no raw link. LINE is the "notice", not the "detail" surface;
+            # the full title + clickable link lives in the Sheet's WATCHLIST_NEWS_TAB
+            # (write_sheet.py), written from the same news_by_code data run_daily.py passes here.
+            messages.append(
+                f"📢 {code} {ann.get('company_name', '')}：{ann['title']} → 詳情看 Sheet「自選股新聞」"
+            )
     return messages, newly_seen
 
 
