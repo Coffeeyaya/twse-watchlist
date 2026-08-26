@@ -32,8 +32,19 @@ batch/                   Python job, runs daily via GitHub Actions
 
 data/                     Committed JSON snapshots (full-market + watchlist detail)
 dashboard/                Static HTML/CSS/JS (no build step), Chart.js, served by GitHub Pages
+├── index.html             The dashboard itself
+└── pipeline.html          Architecture reference: data flow + function-call diagram, with a
+                            password-gated comment form (see the coordination project's
+                            line-bot-and-google-sheets-setup.md, Part D, for the Apps Script setup)
 .github/workflows/        daily.yml — cron, ~16:00 Asia/Taipei on trading days
 ```
+
+## Architecture reference
+
+[dashboard/pipeline.html](https://coffeeyaya.github.io/twse-watchlist/dashboard/pipeline.html) —
+data flow + function-call diagram for the daily pipeline (what calls what, in what order, from TWSE
+to the Sheet/dashboard/LINE). Includes a password-protected comment form for feedback without
+needing to sign into GitHub.
 
 ## Disclaimer
 

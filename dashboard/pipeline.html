@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TWSE Watchlist Pipeline</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #F6F7F5;
+    --bg-panel: #FFFFFF;
+    --bg-inset: #F0F2F0;
+    --text: #14181C;
+    --text-secondary: #4B5A57;
+    --text-tertiary: #7C8A86;
+    --border: #DCE2DF;
+    --border-strong: #C4CDC9;
+    --accent: #0F7A6B;
+    --accent-strong: #0B5A4F;
+    --accent-soft: #E3F1EE;
+    --pending: #A85D14;
+    --pending-soft: #F8E9D8;
+    --pending-border: #E0BE8F;
+    --shadow: rgba(20, 30, 28, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10171A;
+      --bg-panel: #172120;
+      --bg-inset: #1C2726;
+      --text: #E7ECEA;
+      --text-secondary: #9DB0AC;
+      --text-tertiary: #71827E;
+      --border: #2B3634;
+      --border-strong: #3A4744;
+      --accent: #3FC2A6;
+      --accent-strong: #6BD8C0;
+      --accent-soft: rgba(63, 194, 166, 0.12);
+      --pending: #E7A24B;
+      --pending-soft: rgba(231, 162, 75, 0.12);
+      --pending-border: rgba(231, 162, 75, 0.35);
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', 'IBM Plex Sans TC', system-ui, sans-serif;
+    line-height: 1.6;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  header.hero { display: flex; flex-direction: column; gap: 0.9rem; }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  h1 {
+    font-weight: 700;
+    font-size: clamp(1.8rem, 4vw, 2.3rem);
+    line-height: 1.15;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle { color: var(--text-secondary); font-size: 1.02rem; max-width: 62ch; margin: 0; }
+
+  .status-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.3rem; }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.32rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    background: var(--bg-inset);
+  }
+
+  .pill.pending { color: var(--pending); background: var(--pending-soft); border-color: var(--pending-border); font-weight: 500; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+
+  section { display: flex; flex-direction: column; gap: 1rem; }
+
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+  }
+
+  h2 .num { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: var(--text-tertiary); font-weight: 500; }
+
+  .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px var(--shadow); }
+
+  .diagram-panel { padding: 1.4rem 1.2rem; overflow-x: auto; }
+  .diagram-panel .mermaid { min-width: 760px; }
+
+  .diagram-caption {
+    padding: 0.85rem 1.2rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1.5;
+  }
+
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.6rem 1.2rem; }
+  .legend-item { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.88rem; color: var(--text-secondary); }
+  .swatch { width: 13px; height: 13px; border-radius: 3px; margin-top: 0.2rem; flex: none; border: 1.5px solid var(--border-strong); }
+  .swatch.external { background: var(--accent-soft); border-color: var(--accent); }
+  .swatch.script { background: var(--bg-inset); border-color: var(--text-tertiary); }
+  .swatch.data { background: var(--bg-inset); border-color: var(--border-strong); border-style: dashed; }
+  .swatch.pending { background: var(--pending-soft); border-color: var(--pending); border-style: dashed; }
+
+  ol.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+  ol.steps li { display: grid; grid-template-columns: 2.3rem 1fr; gap: 0.9rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); font-size: 0.93rem; }
+  ol.steps li:last-child { border-bottom: none; }
+  ol.steps .step-num { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--accent); font-weight: 600; padding-top: 0.1rem; }
+
+  code, .mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.86em;
+    background: var(--bg-inset);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    color: var(--text);
+  }
+
+  .callout {
+    padding: 1.1rem 1.2rem;
+    border-radius: 10px;
+    border: 1px solid var(--pending-border);
+    background: var(--pending-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .callout-title { font-weight: 600; color: var(--pending); font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; }
+  .callout p { margin: 0; font-size: 0.9rem; color: var(--text); }
+
+  .comment-panel { padding: 1.3rem 1.3rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+  .comment-panel p.hint { margin: 0; font-size: 0.87rem; color: var(--text-secondary); }
+
+  form#comment-form { display: flex; flex-direction: column; gap: 0.8rem; }
+  .form-row { display: flex; flex-direction: column; gap: 0.35rem; }
+  .form-row label { font-size: 0.8rem; color: var(--text-tertiary); font-weight: 500; }
+
+  input[type="text"], input[type="password"], textarea {
+    font-family: 'IBM Plex Sans', 'IBM Plex Sans TC', system-ui, sans-serif;
+    font-size: 0.95rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 7px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg);
+    color: var(--text);
+  }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  textarea { resize: vertical; min-height: 5.5rem; font-size: 0.95rem; }
+
+  .form-actions { display: flex; align-items: center; gap: 0.9rem; }
+
+  button {
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 7px;
+    border: none;
+    background: var(--accent);
+    color: #ffffff;
+    cursor: pointer;
+  }
+  button:hover { background: var(--accent-strong); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #comment-status { font-size: 0.85rem; color: var(--text-secondary); min-height: 1.2em; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding-top: 1.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .links { display: flex; flex-wrap: wrap; gap: 1rem; }
+
+  @media (max-width: 600px) {
+    ol.steps li { grid-template-columns: 1.8rem 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="hero">
+    <span class="eyebrow">twse-watchlist &middot; architecture reference</span>
+    <h1>Data flow &amp; function calls</h1>
+    <p class="subtitle">
+      What <code>daily.yml</code> actually runs, in order, from TWSE's raw data to the Sheet,
+      the dashboard, and LINE. Written 2026-08-23.
+    </p>
+    <div class="status-row">
+      <span class="pill"><span class="dot"></span>as of 2026-08-23</span>
+      <span class="pill pending"><span class="dot"></span>amber = pending PR #5, not yet on main</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span> The pipeline</h2>
+    <div class="panel diagram-panel">
+<pre class="mermaid">
+flowchart TD
+    TWSE["TWSE OpenAPI<br/>STOCK_DAY_ALL / BWIBBU_ALL"]
+    GNEWS["Google News RSS"]
+
+    subgraph JOB["GitHub Actions &middot; daily.yml, Mon-Fri 16:00 Taipei"]
+        RUN["run_daily.py<br/>main()"]
+        FM["fetch_market.py<br/>main()"]
+        TC["twse_client.py<br/>fetch_today_ohlc / fetch_today_valuation"]
+        HS["history_store.py<br/>append_today / load_history"]
+        WJ["write_json.py<br/>build_dashboard_data()"]
+        IND["indicators.py<br/>compute_indicators()"]
+        LBL["labels.py<br/>build_labels()"]
+        WS["write_sheet.py<br/>write_dashboard_data()"]
+        FWN["fetch_watchlist_news.py<br/>fetch_all()"]
+        WSN["write_sheet.py<br/>write_watchlist_news()"]
+        AL["alerts.py<br/>run()"]
+        SLP["alerts.py<br/>send_line_push()"]
+    end
+
+    subgraph REPO["data/*.json &mdash; committed back to the repo each run"]
+        SNAP["market_snapshot.json"]
+        HIST["history/{code}.json"]
+        DASH["dashboard.json"]
+        SEEN["seen_announcements.json"]
+    end
+
+    subgraph SHEET["Google Sheet"]
+        WLIST["自選清單 (input)"]
+        FULLM["全市場"]
+        WDET["自選股詳情"]
+        WNEWS["自選股新聞"]
+    end
+
+    PAGES["GitHub Pages<br/>dashboard/ index.html + app.js"]
+    LINEAPI["LINE Messaging API"]
+    BACKFILL["backfill_history.py<br/>(one-time / on-demand, not in the daily run)"]
+
+    YOU["Your LINE &middot; test recipient"]
+    DAD["Dad's LINE &middot; real recipient"]
+    READER["You / dad &middot; browser"]
+
+    TWSE --> TC --> FM
+    RUN -- "1" --> FM
+    FM -- "writes" --> SNAP
+    FM -- "appends" --> HS
+    HS -- "history/{code}.json" --> HIST
+    BACKFILL -. "seeds 3yr history once" .-> HIST
+
+    RUN -- "2" --> WJ
+    SNAP --> WJ
+    HIST --> WJ
+    WJ --> IND
+    WJ --> LBL
+    WJ -- "writes" --> DASH
+
+    RUN -- "3" --> WS
+    DASH --> WS
+    WS -- "reads codes" --> WLIST
+    WS -- "overwrites" --> FULLM
+    WS -- "overwrites, watchlist rows only" --> WDET
+
+    RUN -- "4" --> FWN
+    GNEWS --> FWN
+    FWN -- "news_by_code" --> RUN
+
+    RUN -- "5, pending PR 5" --> WSN
+    WSN -- "overwrites" --> WNEWS
+
+    RUN -- "6" --> AL
+    HIST --> AL
+    SEEN -- "dedup ids" --> AL
+    AL -- "updates" --> SEEN
+    AL --> SLP
+    SLP --> LINEAPI
+
+    LINEAPI -- "LINE_TEST_MODE=true, pending PR 5" --> YOU
+    LINEAPI -- "LINE_TEST_MODE=false, default" --> YOU
+    LINEAPI -- "LINE_TEST_MODE=false, default" --> DAD
+
+    DASH -- "git commit + push" --> PAGES
+    HIST -- "git commit + push" --> PAGES
+    PAGES --> READER
+
+    classDef external stroke:#0F7A6B,stroke-width:1.6px;
+    classDef pendingNode stroke:#A85D14,stroke-width:2px,stroke-dasharray:4 3;
+    classDef people stroke:#0F7A6B,stroke-width:1.6px;
+
+    class TWSE,GNEWS,LINEAPI external;
+    class WSN,WNEWS pendingNode;
+    class YOU,DAD,READER people;
+</pre>
+    </div>
+    <div class="diagram-caption">
+      numbers on the arrows out of run_daily.py = execution order, not diagram position &middot;
+      dashed amber = written but not yet reachable from <span class="mono">main</span> (PR #5)
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span> Reading the diagram</h2>
+    <div class="legend">
+      <div class="legend-item"><span class="swatch external"></span> External service &mdash; TWSE, Google News, LINE</div>
+      <div class="legend-item"><span class="swatch script"></span> Script / function, runs inside the daily job</div>
+      <div class="legend-item"><span class="swatch data"></span> File committed to the repo, or a Sheet tab</div>
+      <div class="legend-item"><span class="swatch pending"></span> Exists in code, not yet live on <span class="mono">main</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span> Execution order, <code>run_daily.py:main()</code></h2>
+    <div class="panel" style="padding: 0.2rem 1.2rem;">
+      <ol class="steps">
+        <li><span class="step-num">1</span><span>&nbsp;<strong>fetch_market.py</strong> pulls today's OHLC + valuation for every TWSE-listed stock in two bulk calls, writes <code>market_snapshot.json</code>, appends one record per stock to <code>history/{code}.json</code>.</span></li>
+        <li><span class="step-num">2</span><span>&nbsp;<strong>write_json.py</strong> joins the snapshot with history, runs <strong>indicators.py</strong> (SMA20/60, RSI14, MACD, MA cross) and <strong>labels.py</strong> (percentile valuation words) per stock, writes <code>dashboard.json</code>.</span></li>
+        <li><span class="step-num">3</span><span>&nbsp;If Sheets secrets are set: <strong>write_sheet.py</strong> reads the watchlist tickers from <code>自選清單</code>, overwrites <code>全市場</code> and <code>自選股詳情</code>.</span></li>
+        <li><span class="step-num">4</span><span>&nbsp;For each watchlist ticker, <strong>fetch_watchlist_news.py</strong> queries Google News RSS by company name.</span></li>
+        <li><span class="step-num">5</span><span>&nbsp;<strong>write_sheet.write_watchlist_news()</strong> writes one row per news item to <code>自選股新聞</code>. <em>Only on the branch behind PR #5 &mdash; not on <code>main</code> yet.</em></span></li>
+        <li><span class="step-num">6</span><span>&nbsp;If LINE secrets are set: <strong>alerts.py</strong> evaluates MA-cross / RSI-band triggers and new-announcement triggers, then <strong>send_line_push()</strong> posts one message per recipient.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="callout">
+      <div class="callout-title">&#9888; Why the amber matters right now</div>
+      <p>
+        <code>main</code>'s <code>daily.yml</code> already has <code>LINE_TEST_MODE=true</code>, but
+        <code>main</code>'s <code>alerts.py</code> still always reads <code>LINE_RECIPIENT_USER_IDS</code>
+        &mdash; the real list, dad included. PR #5 carries the fix onto <code>main</code> directly.
+        Until it merges, any trigger firing on a scheduled run pushes to both real recipients
+        regardless of test mode. Full writeup in <code>status/decisions.md</code>.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span> Leave a comment</h2>
+    <div class="panel comment-panel">
+      <p class="hint">
+        The password is checked inside the Apps Script webhook, not in this page — so it never
+        appears in this page's source, even though the page itself is public. Comments don't show up
+        here after sending; open the Sheet's <code>Pipeline留言</code> tab to read them (see
+        <code>howto/line-bot-and-google-sheets-setup.md</code>, Part D).
+      </p>
+      <form id="comment-form">
+        <div class="form-row">
+          <label for="c-name">Name (optional)</label>
+          <input type="text" id="c-name" maxlength="40" placeholder="你的名字（可留白）">
+        </div>
+        <div class="form-row">
+          <label for="c-password">Password</label>
+          <input type="password" id="c-password" required>
+        </div>
+        <div class="form-row">
+          <label for="c-text">Comment</label>
+          <textarea id="c-text" maxlength="2000" required placeholder="留言內容"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit">Send</button>
+          <span id="comment-status"></span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <footer>
+    <div class="links">
+      <a href="https://github.com/Coffeeyaya/twse-watchlist" target="_blank" rel="noopener">github.com/Coffeeyaya/twse-watchlist</a>
+      <a href="index.html">live dashboard</a>
+      <a href="https://github.com/Coffeeyaya/twse-watchlist/pull/5" target="_blank" rel="noopener">PR #5</a>
+    </div>
+    <span>generated 2026-08-23</span>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: isDark ? 'dark' : 'default',
+    themeVariables: { fontFamily: "'IBM Plex Sans', 'IBM Plex Sans TC', system-ui, sans-serif" },
+    securityLevel: 'strict',
+  });
+</script>
+
+<script>
+  // Fill this in after Part D of howto/line-bot-and-google-sheets-setup.md — same Apps Script
+  // Web app URL already used for the LINE webhook (Part C), ends in /exec.
+  const COMMENTS_ENDPOINT = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+  const form = document.getElementById('comment-form');
+  const status = document.getElementById('comment-status');
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const name = document.getElementById('c-name').value.trim();
+    const password = document.getElementById('c-password').value;
+    const text = document.getElementById('c-text').value.trim();
+
+    if (!text) {
+      status.textContent = '留言不能是空的。';
+      return;
+    }
+    if (COMMENTS_ENDPOINT.indexOf('PASTE_YOUR') === 0) {
+      status.textContent = '這個頁面還沒接上 Apps Script URL — 見 howto 文件 Part D。';
+      return;
+    }
+
+    status.textContent = '送出中…';
+    try {
+      // mode: "no-cors" deliberately — Apps Script Web Apps don't reliably answer the CORS
+      // preflight a normal cross-origin POST triggers, so we fire-and-forget instead of trying
+      // to read the response back. The write still happens server-side regardless.
+      await fetch(COMMENTS_ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type: 'comment', name: name || '匿名', password, text }),
+      });
+      status.textContent = '已送出。如果密碼不對，這則不會出現在 Sheet 的「Pipeline留言」分頁裡（這裡沒辦法確認結果）。';
+      form.reset();
+    } catch (err) {
+      status.textContent = '送出失敗（網路問題）：' + err.message;
+    }
+  });
+</script>
+
+</body>
+</html>
