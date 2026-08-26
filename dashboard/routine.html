@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TWSE Watchlist Routine Activity</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+TC:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #F6F7F5; --bg-panel: #FFFFFF; --bg-inset: #F0F2F0;
+    --text: #14181C; --text-secondary: #4B5A57; --text-tertiary: #7C8A86;
+    --border: #DCE2DF; --border-strong: #C4CDC9;
+    --accent: #0F7A6B; --accent-strong: #0B5A4F; --accent-soft: #E3F1EE;
+    --pending: #A85D14; --pending-soft: #F8E9D8; --pending-border: #E0BE8F;
+    --shadow: rgba(20, 30, 28, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10171A; --bg-panel: #172120; --bg-inset: #1C2726;
+      --text: #E7ECEA; --text-secondary: #9DB0AC; --text-tertiary: #71827E;
+      --border: #2B3634; --border-strong: #3A4744;
+      --accent: #3FC2A6; --accent-strong: #6BD8C0; --accent-soft: rgba(63, 194, 166, 0.12);
+      --pending: #E7A24B; --pending-soft: rgba(231, 162, 75, 0.12); --pending-border: rgba(231, 162, 75, 0.35);
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'IBM Plex Sans', 'IBM Plex Sans TC', system-ui, sans-serif;
+    line-height: 1.6; font-size: 16px; -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 900px; margin: 0 auto; padding: 3rem 1.5rem 4rem; display: flex; flex-direction: column; gap: 2.2rem; }
+  header.hero { display: flex; flex-direction: column; gap: 0.9rem; }
+  .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 500; }
+  h1 { font-weight: 700; font-size: clamp(1.8rem, 4vw, 2.3rem); line-height: 1.15; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-secondary); font-size: 1.02rem; max-width: 62ch; margin: 0; }
+  code, .mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.86em; background: var(--bg-inset); padding: 0.1em 0.4em; border-radius: 4px; color: var(--text); }
+  section { display: flex; flex-direction: column; gap: 1rem; }
+  h2 { font-size: 1.15rem; font-weight: 600; margin: 0; }
+  .panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 3px var(--shadow); }
+  #status { font-size: 0.9rem; color: var(--text-secondary); }
+
+  .pr-card { padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .pr-card + .pr-card { border-top: 1px solid var(--border); }
+  .pr-title { font-weight: 600; font-size: 1rem; margin: 0; }
+  .pr-title a { color: var(--text); text-decoration: none; }
+  .pr-title a:hover { color: var(--accent); }
+  .pr-meta { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--text-tertiary); display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .pr-body { font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; max-height: 6.5rem; overflow-y: auto; border-left: 2px solid var(--border); padding-left: 0.7rem; }
+  .pr-actions { display: flex; gap: 0.9rem; margin-top: 0.2rem; }
+  .pr-actions a { font-size: 0.85rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+  .pr-actions a:hover { text-decoration: underline; }
+
+  .empty, .error { padding: 1.3rem; font-size: 0.9rem; color: var(--text-secondary); }
+  .error { color: var(--pending); }
+
+  footer { border-top: 1px solid var(--border); padding-top: 1.4rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.8rem; font-size: 0.85rem; color: var(--text-tertiary); }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .links { display: flex; flex-wrap: wrap; gap: 1rem; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="hero">
+    <span class="eyebrow">twse-watchlist &middot; routine activity</span>
+    <h1>Feature branches to review</h1>
+    <p class="subtitle">
+      Open pull requests, newest first — including anything the scheduled routine implemented on
+      its own. Fetched live from GitHub's public API, no sign-in needed since the repo is public.
+      Click a branch to preview its actual dashboard output before deciding whether to merge.
+    </p>
+  </header>
+
+  <section>
+    <div class="panel" id="pr-list">
+      <p class="empty" id="status">Loading open pull requests…</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="links">
+      <a href="index.html">live dashboard (main)</a>
+      <a href="pipeline.html">architecture + leave a comment</a>
+      <a href="https://github.com/Coffeeyaya/twse-watchlist/pulls" target="_blank" rel="noopener">all PRs on GitHub</a>
+    </div>
+    <span>no GitHub/Google/LINE sign-in required on this page</span>
+  </footer>
+</div>
+
+<script>
+  const REPO = "Coffeeyaya/twse-watchlist";
+  const listEl = document.getElementById("pr-list");
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function fmtDate(iso) {
+    return new Date(iso).toLocaleString("zh-TW", { hour12: false });
+  }
+
+  function prCard(pr) {
+    const branch = pr.head.ref;
+    const body = (pr.body || "").trim();
+    const bodyPreview = body.length > 600 ? body.slice(0, 600) + "…" : body;
+    return `
+      <div class="pr-card">
+        <p class="pr-title"><a href="${pr.html_url}" target="_blank" rel="noopener">#${pr.number} ${escapeHtml(pr.title)}</a></p>
+        <div class="pr-meta">
+          <span>branch: <span class="mono">${escapeHtml(branch)}</span></span>
+          <span>opened ${fmtDate(pr.created_at)}</span>
+          <span>by ${escapeHtml(pr.user.login)}</span>
+        </div>
+        ${bodyPreview ? `<div class="pr-body">${escapeHtml(bodyPreview)}</div>` : ""}
+        <div class="pr-actions">
+          <a href="index.html?branch=${encodeURIComponent(branch)}">preview this branch's dashboard →</a>
+          <a href="${pr.html_url}/files" target="_blank" rel="noopener">view diff on GitHub →</a>
+        </div>
+      </div>`;
+  }
+
+  async function load() {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/pulls?state=open&sort=created&direction=desc`);
+      if (!res.ok) {
+        throw new Error(`GitHub API returned ${res.status}${res.status === 403 ? " (likely rate-limited — unauthenticated requests are capped at 60/hour; try again later)" : ""}`);
+      }
+      const prs = await res.json();
+      if (prs.length === 0) {
+        listEl.innerHTML = `<p class="empty">No open pull requests right now.</p>`;
+        return;
+      }
+      listEl.innerHTML = prs.map(prCard).join("");
+    } catch (err) {
+      listEl.innerHTML = `<p class="error">Couldn't load pull requests: ${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  load();
+</script>
+
+</body>
+</html>
