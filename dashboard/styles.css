@@ -35,6 +35,17 @@ header h1 { margin: 0 0 8px; font-size: 22px; }
 
 .updated { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
 
+.branch-banner {
+  background: rgba(217, 164, 65, 0.15);
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 4px 0;
+}
+.branch-banner.hidden { display: none; }
+
 main { padding: 16px 20px 40px; max-width: 1200px; margin: 0 auto; }
 
 .controls {

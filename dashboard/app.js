@@ -1,7 +1,17 @@
 // No build step by design (plan.md) — plain fetch + DOM, served directly by GitHub Pages.
 
-const DATA_URL = "../data/dashboard.json";
-const HISTORY_URL = (code) => `../data/history/${code}.json`;
+// ?branch=<name> previews a feature branch's data straight from GitHub — no clone, no login
+// (raw.githubusercontent.com serves public-repo content unauthenticated). Lets you check a
+// branch's actual output without merging it first. See routine.html for the branch list.
+const GITHUB_REPO = "Coffeeyaya/twse-watchlist";
+const PREVIEW_BRANCH = new URLSearchParams(window.location.search).get("branch");
+const RAW_BASE = PREVIEW_BRANCH
+  ? `https://raw.githubusercontent.com/${GITHUB_REPO}/${encodeURIComponent(PREVIEW_BRANCH)}`
+  : null;
+
+const DATA_URL = RAW_BASE ? `${RAW_BASE}/data/dashboard.json` : "../data/dashboard.json";
+const HISTORY_URL = (code) =>
+  RAW_BASE ? `${RAW_BASE}/data/history/${code}.json` : `../data/history/${code}.json`;
 
 let allStocks = [];
 let sortKey = "code";
@@ -15,6 +25,7 @@ const els = {
   resultCount: document.getElementById("result-count"),
   tbody: document.getElementById("stock-table-body"),
   table: document.getElementById("stock-table"),
+  branchBanner: document.getElementById("branch-banner"),
   overlay: document.getElementById("detail-overlay"),
   detailClose: document.getElementById("detail-close"),
   detailTitle: document.getElementById("detail-title"),
@@ -31,6 +42,10 @@ const els = {
 };
 
 async function init() {
+  if (PREVIEW_BRANCH) {
+    els.branchBanner.textContent = `正在看 branch「${PREVIEW_BRANCH}」的資料，不是 main（正式版）— 回 index.html 看正式資料`;
+    els.branchBanner.classList.remove("hidden");
+  }
   try {
     const res = await fetch(DATA_URL);
     const data = await res.json();
