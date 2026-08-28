@@ -13,6 +13,11 @@ const DATA_URL = RAW_BASE ? `${RAW_BASE}/data/dashboard.json` : "../data/dashboa
 const HISTORY_URL = (code) =>
   RAW_BASE ? `${RAW_BASE}/data/history/${code}.json` : `../data/history/${code}.json`;
 
+// TWSE closes for weekends and multi-day holidays (e.g. Lunar New Year can span 5-9 days), so a
+// short gap since the last run is normal, not a pipeline problem. Only flag data old enough that
+// it's very unlikely to be explained by a holiday calendar.
+const STALE_THRESHOLD_DAYS = 6;
+
 let allStocks = [];
 let sortKey = "code";
 let sortDir = 1;
@@ -26,6 +31,7 @@ const els = {
   tbody: document.getElementById("stock-table-body"),
   table: document.getElementById("stock-table"),
   branchBanner: document.getElementById("branch-banner"),
+  staleBanner: document.getElementById("stale-banner"),
   overlay: document.getElementById("detail-overlay"),
   detailClose: document.getElementById("detail-close"),
   detailTitle: document.getElementById("detail-title"),
@@ -52,6 +58,7 @@ async function init() {
     allStocks = data.stocks;
     els.disclaimer.textContent = data.disclaimer;
     els.updated.textContent = `最後更新：${formatDateTime(data.generated_at)}（共 ${data.stock_count} 檔）`;
+    checkStaleness(data.generated_at);
     render();
   } catch (err) {
     els.disclaimer.textContent = "資料載入失敗，請稍後再試。";
@@ -62,6 +69,17 @@ async function init() {
 function formatDateTime(iso) {
   const d = new Date(iso);
   return d.toLocaleString("zh-TW", { hour12: false });
+}
+
+function checkStaleness(generatedAtIso) {
+  const generatedAt = new Date(generatedAtIso);
+  if (isNaN(generatedAt.getTime())) return;
+  const ageDays = (Date.now() - generatedAt.getTime()) / (1000 * 60 * 60 * 24);
+  if (ageDays <= STALE_THRESHOLD_DAYS) return;
+  els.staleBanner.textContent =
+    `⚠ 資料最後更新於 ${formatDateTime(generatedAtIso)}，距今已超過 ${STALE_THRESHOLD_DAYS} 天，` +
+    `可能未反映近期交易日（例如每日排程曾失敗），請留意。`;
+  els.staleBanner.classList.remove("hidden");
 }
 
 function matchesFilters(stock) {
