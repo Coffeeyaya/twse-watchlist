@@ -100,10 +100,29 @@ def ma_cross_label(ma_cross: Optional[dict]) -> Optional[str]:
     return _MA_CROSS_LABELS.get(ma_cross.get("state"))
 
 
+def range_52w_label(range_52w: Optional[dict], *, near_pct: float = 3.0) -> Optional[str]:
+    """`near_pct` = how close (%) to the high/low still counts as "near" once today isn't
+    itself the extreme. Purely descriptive — a 52-week high is not a sell signal here."""
+    if not range_52w:
+        return None
+    if range_52w.get("window_days", 0) < 60:
+        return None
+    if range_52w["is_52w_high"]:
+        return "股價創52週新高"
+    if range_52w["is_52w_low"]:
+        return "股價創52週新低"
+    if range_52w["pct_from_high"] >= -near_pct:
+        return "股價接近52週高點"
+    if range_52w["pct_from_low"] <= near_pct:
+        return "股價接近52週低點"
+    return None
+
+
 def build_labels(history: list[dict], indicators: dict) -> dict:
     return {
         **valuation_labels(history),
         "rsi_label": rsi_label(indicators.get("rsi14")),
         "ma_cross_label": ma_cross_label(indicators.get("ma_cross")),
+        "range_52w_label": range_52w_label(indicators.get("range_52w")),
         "disclaimer": DISCLAIMER,
     }
