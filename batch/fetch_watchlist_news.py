@@ -15,6 +15,7 @@ import time
 from urllib.parse import quote
 
 import feedparser
+import requests
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -22,6 +23,8 @@ log = logging.getLogger(__name__)
 RSS_URL = "https://news.google.com/rss/search?q={query}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
 MAX_ITEMS_PER_STOCK = 5
 REQUEST_DELAY_SECONDS = 0.5
+REQUEST_TIMEOUT = 15
+USER_AGENT = "Mozilla/5.0 (compatible; twse-watchlist/1.0; +https://github.com/)"
 
 
 def _stable_id(entry) -> str:
@@ -30,8 +33,16 @@ def _stable_id(entry) -> str:
 
 
 def fetch_news_for_stock(code: str, company_name: str) -> list[dict]:
+    # feedparser.parse(url) would fetch the URL itself with no timeout (relies on the OS's
+    # default socket timeout, which can be unbounded) — a single unresponsive request could hang
+    # the whole daily batch well past the exception handling in fetch_all() below, since a hang
+    # isn't an exception. Fetching with `requests` first bounds it to REQUEST_TIMEOUT seconds and
+    # lets fetch_all()'s try/except handle failures the normal way; feedparser only parses the
+    # already-downloaded bytes.
     url = RSS_URL.format(query=quote(company_name))
-    parsed = feedparser.parse(url)
+    resp = requests.get(url, timeout=REQUEST_TIMEOUT, headers={"User-Agent": USER_AGENT})
+    resp.raise_for_status()
+    parsed = feedparser.parse(resp.content)
     items = []
     for entry in parsed.entries[:MAX_ITEMS_PER_STOCK]:
         items.append(
