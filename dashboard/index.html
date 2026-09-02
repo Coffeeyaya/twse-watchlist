@@ -15,6 +15,24 @@
   </header>
 
   <main>
+    <details class="glossary">
+      <summary>名詞解釋（第一次看不懂這些欄位嗎？點我）</summary>
+      <dl>
+        <dt>本益比（PE）</dt>
+        <dd>股價除以每股盈餘，代表用目前股價要花幾年的獲利才能回本。數字本身沒有絕對的「好」或「壞」，本工具只呈現它相對於這檔股票自己過去歷史的百分位。</dd>
+        <dt>股價淨值比（PB）</dt>
+        <dd>股價除以每股淨值，衡量股價相對公司帳面資產的倍數，同樣只跟這檔股票自己的歷史比較。</dd>
+        <dt>殖利率</dt>
+        <dd>近一年現金股利除以股價的比例，數字愈高代表持股期間現金股利相對股價愈高，但不代表未來會持續配發。</dd>
+        <dt>RSI(14)</dt>
+        <dd>根據最近 14 個交易日的漲跌幅計算的技術指標，數值愈高代表近期漲勢愈強、愈低代表跌勢愈強，用來描述價格的近期強弱，不是進出場訊號。</dd>
+        <dt>均線狀態 / 黃金交叉 / 死亡交叉</dt>
+        <dd>比較 20 日與 60 日均價線的相對位置。20 日線由下往上穿越 60 日線稱為「黃金交叉」，由上往下穿越稱為「死亡交叉」，都只是描述價格趨勢的技術觀察。</dd>
+        <dt>估值標籤（如「相對自身歷史便宜／昂貴」）</dt>
+        <dd>把本益比、股價淨值比、殖利率拿來跟這檔股票自己過去的歷史數值做百分位排名算出的描述，不是跟其他公司比較，也不是買賣建議。</dd>
+      </dl>
+    </details>
+
     <section class="controls">
       <input id="search" type="text" placeholder="搜尋股票代號或名稱…" autocomplete="off" />
       <div class="filter-group">
@@ -35,12 +53,12 @@
             <th data-sort="name">名稱</th>
             <th data-sort="close">收盤價</th>
             <th data-sort="change">漲跌</th>
-            <th data-sort="pe">本益比</th>
-            <th data-sort="pb">股價淨值比</th>
-            <th data-sort="dividend_yield">殖利率</th>
-            <th data-sort="rsi14">RSI(14)</th>
-            <th>均線狀態</th>
-            <th>估值標籤</th>
+            <th data-sort="pe" title="本益比：股價 ÷ 每股盈餘，只跟這檔股票自己的歷史比較">本益比</th>
+            <th data-sort="pb" title="股價淨值比：股價 ÷ 每股淨值，只跟這檔股票自己的歷史比較">股價淨值比</th>
+            <th data-sort="dividend_yield" title="殖利率：近一年現金股利 ÷ 股價">殖利率</th>
+            <th data-sort="rsi14" title="RSI(14)：近 14 個交易日漲跌強弱指標，非進出場訊號">RSI(14)</th>
+            <th title="20 日均線與 60 日均線的相對位置與交叉狀態">均線狀態</th>
+            <th title="本益比／股價淨值比／殖利率的自身歷史百分位描述，非買賣建議">估值標籤</th>
           </tr>
         </thead>
         <tbody id="stock-table-body"></tbody>
