@@ -100,10 +100,25 @@ def ma_cross_label(ma_cross: Optional[dict]) -> Optional[str]:
     return _MA_CROSS_LABELS.get(ma_cross.get("state"))
 
 
+_MACD_LABELS = {
+    "bullish_cross": "今日 MACD 柱狀圖由負轉正（DIF 上穿訊號線）",
+    "bearish_cross": "今日 MACD 柱狀圖由正轉負（DIF 下穿訊號線）",
+    "above": "MACD 柱狀圖為正（DIF 位於訊號線之上）",
+    "below": "MACD 柱狀圖為負（DIF 位於訊號線之下）",
+}
+
+
+def macd_label(macd: Optional[dict]) -> Optional[str]:
+    if not macd:
+        return None
+    return _MACD_LABELS.get(macd.get("state"))
+
+
 def build_labels(history: list[dict], indicators: dict) -> dict:
     return {
         **valuation_labels(history),
         "rsi_label": rsi_label(indicators.get("rsi14")),
         "ma_cross_label": ma_cross_label(indicators.get("ma_cross")),
+        "macd_label": macd_label(indicators.get("macd")),
         "disclaimer": DISCLAIMER,
     }
