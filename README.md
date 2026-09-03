@@ -31,6 +31,8 @@ batch/                   Python job, runs daily via GitHub Actions
 └── write_json.py          Writes static /data/*.json for the dashboard
 
 data/                     Committed JSON snapshots (full-market + watchlist detail)
+tests/                    Unit tests for the pure computation modules (indicators.py, labels.py),
+                          stdlib unittest only — run with `python -m unittest discover -s tests`
 dashboard/                Static HTML/CSS/JS (no build step), Chart.js, served by GitHub Pages
 ├── index.html             The dashboard itself
 └── pipeline.html          Architecture reference: data flow + function-call diagram, with a
