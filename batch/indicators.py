@@ -59,12 +59,31 @@ def compute_macd(
     if len(macd_line) < signal:
         return None
     signal_line = _ema(macd_line, signal)
+    # signal_line[i] is the EMA of macd_line up to macd_line[signal - 1 + i], so the two series
+    # are aligned index-for-index once macd_line is sliced the same way (mirrors compute_ma_cross).
+    histogram_line = [m - s for m, s in zip(macd_line[signal - 1 :], signal_line)]
     macd_val = macd_line[-1]
     signal_val = signal_line[-1]
+    histogram_val = round(macd_val - signal_val, 4)
+
+    if len(histogram_line) < 2:
+        state = "above" if histogram_val > 0 else "below"
+        crossed_today = False
+    else:
+        today, yesterday = histogram_line[-1], histogram_line[-2]
+        if yesterday <= 0 < today:
+            state, crossed_today = "bullish_cross", True
+        elif yesterday >= 0 > today:
+            state, crossed_today = "bearish_cross", True
+        else:
+            state, crossed_today = ("above" if today > 0 else "below"), False
+
     return {
         "macd": round(macd_val, 4),
         "signal": round(signal_val, 4),
-        "histogram": round(macd_val - signal_val, 4),
+        "histogram": histogram_val,
+        "state": state,
+        "crossed_today": crossed_today,
     }
 
 

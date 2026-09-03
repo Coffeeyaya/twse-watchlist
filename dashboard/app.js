@@ -38,6 +38,8 @@ const els = {
     oversold: document.getElementById("filter-oversold"),
     overbought: document.getElementById("filter-overbought"),
     cheap: document.getElementById("filter-cheap"),
+    macdBullish: document.getElementById("filter-macd-bullish"),
+    macdBearish: document.getElementById("filter-macd-bearish"),
   },
 };
 
@@ -83,6 +85,9 @@ function matchesFilters(stock) {
                      (pb !== null && pb !== undefined && pb <= 20);
     if (!isCheap) return false;
   }
+  const macdState = stock.indicators?.macd?.state;
+  if (f.macdBullish.checked && macdState !== "bullish_cross") return false;
+  if (f.macdBearish.checked && macdState !== "bearish_cross") return false;
   return true;
 }
 
@@ -125,6 +130,11 @@ function rowHtml(s) {
     .filter((t) => t && t !== "相對自身歷史中等水準")
     .map((t) => `<span class="tag">${t}</span>`);
 
+  const macdState = s.indicators?.macd?.state;
+  const macdTags = [];
+  if (macdState === "bullish_cross") macdTags.push('<span class="tag">MACD 轉多</span>');
+  if (macdState === "bearish_cross") macdTags.push('<span class="tag">MACD 轉空</span>');
+
   return `<tr>
     <td>${s.code}</td>
     <td>${s.name ?? ""}</td>
@@ -135,6 +145,7 @@ function rowHtml(s) {
     <td>${fmt(s.dividend_yield, "%")}</td>
     <td>${fmt(rsi)}</td>
     <td>${tags.join("") || "—"}</td>
+    <td>${macdTags.join("") || "—"}</td>
     <td>${valuationTags.join("") || "—"}</td>
   </tr>`;
 }
@@ -152,6 +163,7 @@ async function openDetail(stock) {
   const labelLines = [
     stock.labels?.ma_cross_label,
     stock.labels?.rsi_label,
+    stock.labels?.macd_label,
     stock.labels?.pe_label && `本益比：${stock.labels.pe_label}（百分位 ${stock.labels.pe_percentile}）`,
     stock.labels?.pb_label && `股價淨值比：${stock.labels.pb_label}（百分位 ${stock.labels.pb_percentile}）`,
     stock.labels?.dividend_yield_label && `殖利率：${stock.labels.dividend_yield_label}（百分位 ${stock.labels.dividend_yield_percentile}）`,
