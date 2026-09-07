@@ -100,10 +100,31 @@ def ma_cross_label(ma_cross: Optional[dict]) -> Optional[str]:
     return _MA_CROSS_LABELS.get(ma_cross.get("state"))
 
 
+# How close to the trailing high/low counts as "near", in percent.
+_RANGE_52W_NEAR_PCT = 5
+
+
+def range_52w_label(range_52w: Optional[dict]) -> Optional[str]:
+    """Describes today's close relative to its own trailing high/low (indicators.compute_52w_range).
+    Purely descriptive (distance from a stock's own past range), not a signal about where it's
+    headed next."""
+    if not range_52w:
+        return None
+    period = "近一年" if range_52w["period_days"] >= 200 else f"近{range_52w['period_days']}個交易日"
+    pct_from_high = range_52w.get("pct_from_high")
+    pct_from_low = range_52w.get("pct_from_low")
+    if pct_from_high is not None and pct_from_high >= -_RANGE_52W_NEAR_PCT:
+        return f"股價接近{period}高點"
+    if pct_from_low is not None and pct_from_low <= _RANGE_52W_NEAR_PCT:
+        return f"股價接近{period}低點"
+    return None
+
+
 def build_labels(history: list[dict], indicators: dict) -> dict:
     return {
         **valuation_labels(history),
         "rsi_label": rsi_label(indicators.get("rsi14")),
         "ma_cross_label": ma_cross_label(indicators.get("ma_cross")),
+        "range_52w_label": range_52w_label(indicators.get("range_52w")),
         "disclaimer": DISCLAIMER,
     }
