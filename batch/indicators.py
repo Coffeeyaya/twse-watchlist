@@ -92,6 +92,25 @@ def compute_ma_cross(closes: list[float], short: int = 20, long: int = 60) -> di
     return {"state": "above" if today > 0 else "below", "crossed_today": False}
 
 
+def compute_52w_range(closes: list[float], window: int = 252) -> Optional[dict]:
+    """52-week high/low (~252 trading days, or however much history has accumulated if less)
+    and how far today's close sits from each, as a percentage. A well-known, purely descriptive
+    reference point — not a signal — so beginners can place "today" against the recent range."""
+    if not closes:
+        return None
+    windowed = closes[-window:]
+    latest = windowed[-1]
+    high = max(windowed)
+    low = min(windowed)
+    return {
+        "high": high,
+        "low": low,
+        "pct_from_high": round(100 * (latest - high) / high, 2) if high else None,
+        "pct_from_low": round(100 * (latest - low) / low, 2) if low else None,
+        "window_days": len(windowed),
+    }
+
+
 def compute_indicators(history: list[dict]) -> dict:
     """`history` = a stock's sorted-by-date list of {date, close, pe, pb, dividend_yield}."""
     closes = [r["close"] for r in history if r.get("close") is not None]
@@ -102,4 +121,5 @@ def compute_indicators(history: list[dict]) -> dict:
         "rsi14": compute_rsi(closes, 14),
         "macd": compute_macd(closes),
         "ma_cross": compute_ma_cross(closes),
+        "range_52w": compute_52w_range(closes),
     }
