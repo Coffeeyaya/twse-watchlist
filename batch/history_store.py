@@ -9,10 +9,30 @@ project for why).
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 HISTORY_DIR = DATA_DIR / "history"
+
+
+def atomic_write_json(path: Path, data) -> None:
+    """Write `data` as JSON to `path` without ever leaving a truncated/corrupt file behind.
+
+    Writes to a sibling temp file first, then atomically renames it onto the destination
+    (os.replace is atomic on POSIX and Windows). If the process is killed mid-write — a GitHub
+    Actions job timeout, an OOM, a runner eviction — the temp file is what's left half-written,
+    and `path` itself is untouched, so the next run can't crash on a corrupted JSON file it
+    reads back.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.tmp{os.getpid()}")
+    try:
+        with tmp_path.open("w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+        os.replace(tmp_path, path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 def load_history(code: str) -> list[dict]:
@@ -24,11 +44,9 @@ def load_history(code: str) -> list[dict]:
 
 
 def save_history(code: str, records: list[dict]) -> None:
-    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
     records = sorted(records, key=lambda r: r["date"])
     path = HISTORY_DIR / f"{code}.json"
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(records, f, ensure_ascii=False, separators=(",", ":"))
+    atomic_write_json(path, records)
 
 
 def merge_records(existing: list[dict], new_records: list[dict]) -> list[dict]:
