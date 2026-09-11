@@ -92,8 +92,25 @@ def compute_ma_cross(closes: list[float], short: int = 20, long: int = 60) -> di
     return {"state": "above" if today > 0 else "below", "crossed_today": False}
 
 
+def compute_volume_ratio(history: list[dict], window: int = 20) -> Optional[float]:
+    """Today's volume vs. the average of the `window` trading days immediately before it.
+
+    Needs `window + 1` volume points (today's + the baseline window) to return a value — until
+    then (e.g. records written before "volume" was added to history) it degrades to None like
+    every other indicator here rather than computing over a short/mixed window.
+    """
+    volumes = [r["volume"] for r in history if r.get("volume") is not None]
+    if len(volumes) < window + 1:
+        return None
+    baseline = volumes[-(window + 1) : -1]
+    avg = sum(baseline) / window
+    if avg <= 0:
+        return None
+    return round(volumes[-1] / avg, 2)
+
+
 def compute_indicators(history: list[dict]) -> dict:
-    """`history` = a stock's sorted-by-date list of {date, close, pe, pb, dividend_yield}."""
+    """`history` = a stock's sorted-by-date list of {date, close, pe, pb, dividend_yield, volume}."""
     closes = [r["close"] for r in history if r.get("close") is not None]
     return {
         "data_points": len(closes),
@@ -102,4 +119,5 @@ def compute_indicators(history: list[dict]) -> dict:
         "rsi14": compute_rsi(closes, 14),
         "macd": compute_macd(closes),
         "ma_cross": compute_ma_cross(closes),
+        "volume_ratio_20": compute_volume_ratio(history),
     }

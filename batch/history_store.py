@@ -1,9 +1,10 @@
 """Per-stock historical record store: data/history/<code>.json, one JSON array per stock.
 
-Kept intentionally minimal (date, close, pe, pb, dividend_yield only) — this is what
-indicators.py/labels.py need for SMA/RSI/MACD and valuation percentiles. Today's full OHLC lives
-only in data/market_snapshot.json, not accumulated here (see decisions.md in the coordination
-project for why).
+Kept intentionally minimal — date, close, pe, pb, dividend_yield, and (since 2026-09-11) volume —
+this is what indicators.py/labels.py need for SMA/RSI/MACD, valuation percentiles, and the
+volume-ratio label. Today's full OHLC lives only in data/market_snapshot.json, not accumulated
+here (see decisions.md in the coordination project for why). Records written before 2026-09-11
+have no "volume" key; readers must treat it as optional (see indicators.compute_volume_ratio).
 """
 
 from __future__ import annotations

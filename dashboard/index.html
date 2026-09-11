@@ -23,6 +23,7 @@
         <label><input type="checkbox" id="filter-oversold" /> RSI 超賣</label>
         <label><input type="checkbox" id="filter-overbought" /> RSI 超買</label>
         <label><input type="checkbox" id="filter-cheap" /> 估值偏低（本身歷史）</label>
+        <label><input type="checkbox" id="filter-volume-spike" /> 成交量明顯放大</label>
       </div>
       <span id="result-count" class="result-count"></span>
     </section>
@@ -41,6 +42,7 @@
             <th data-sort="rsi14">RSI(14)</th>
             <th>均線狀態</th>
             <th>估值標籤</th>
+            <th>量能</th>
           </tr>
         </thead>
         <tbody id="stock-table-body"></tbody>

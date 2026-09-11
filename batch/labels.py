@@ -100,10 +100,23 @@ def ma_cross_label(ma_cross: Optional[dict]) -> Optional[str]:
     return _MA_CROSS_LABELS.get(ma_cross.get("state"))
 
 
+def volume_label(volume_ratio_20: Optional[float]) -> Optional[str]:
+    """Purely descriptive: how today's volume compares to its own recent average. Never implies
+    the direction is good or bad, just that it's unusual — same spirit as rsi_label."""
+    if volume_ratio_20 is None:
+        return None
+    if volume_ratio_20 >= 2.0:
+        return f"今日成交量明顯放大，約為近20日均量的 {volume_ratio_20} 倍"
+    if volume_ratio_20 <= 0.5:
+        return f"今日成交量明顯萎縮，約為近20日均量的 {volume_ratio_20} 倍"
+    return "今日成交量與近20日均量相近"
+
+
 def build_labels(history: list[dict], indicators: dict) -> dict:
     return {
         **valuation_labels(history),
         "rsi_label": rsi_label(indicators.get("rsi14")),
         "ma_cross_label": ma_cross_label(indicators.get("ma_cross")),
+        "volume_label": volume_label(indicators.get("volume_ratio_20")),
         "disclaimer": DISCLAIMER,
     }
