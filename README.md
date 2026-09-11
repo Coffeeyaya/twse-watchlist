@@ -36,8 +36,21 @@ dashboard/                Static HTML/CSS/JS (no build step), Chart.js, served b
 └── pipeline.html          Architecture reference: data flow + function-call diagram, with a
                             password-gated comment form (see the coordination project's
                             line-bot-and-google-sheets-setup.md, Part D, for the Apps Script setup)
+tests/                    Unit tests for indicators.py / labels.py (pure functions, no network)
 .github/workflows/        daily.yml — cron, ~16:00 Asia/Taipei on trading days
+                          tests.yml — runs tests/ on every push and PR
 ```
+
+## Testing
+
+```
+pip install -r requirements-dev.txt
+python -m pytest tests/ -v
+```
+
+Covers `batch/indicators.py` (SMA/RSI/MACD/MA-cross) and `batch/labels.py` (percentile-based
+valuation labels, RSI/MA-cross labels, and the disclaimer string) — all pure, deterministic
+functions, so no network mocking is needed. Runs automatically in CI via `tests.yml`.
 
 ## Architecture reference
 
