@@ -61,10 +61,28 @@ def compute_macd(
     signal_line = _ema(macd_line, signal)
     macd_val = macd_line[-1]
     signal_val = signal_line[-1]
+
+    # Diffs between MACD line and signal line, aligned to the end of signal_line, to detect
+    # whether the two lines crossed on the most recent day (same approach as compute_ma_cross).
+    diffs = [m - s for m, s in zip(macd_line[-len(signal_line):], signal_line)]
+    if len(diffs) < 2:
+        state = "above" if diffs[-1] > 0 else "below"
+        crossed_today = False
+    else:
+        today, yesterday = diffs[-1], diffs[-2]
+        if yesterday <= 0 < today:
+            state, crossed_today = "golden_cross", True
+        elif yesterday >= 0 > today:
+            state, crossed_today = "death_cross", True
+        else:
+            state, crossed_today = ("above" if today > 0 else "below"), False
+
     return {
         "macd": round(macd_val, 4),
         "signal": round(signal_val, 4),
         "histogram": round(macd_val - signal_val, 4),
+        "state": state,
+        "crossed_today": crossed_today,
     }
 
 

@@ -121,6 +121,9 @@ function rowHtml(s) {
   const cross = s.indicators?.ma_cross?.state;
   if (cross === "golden_cross") tags.push('<span class="tag">黃金交叉</span>');
   if (cross === "death_cross") tags.push('<span class="tag">死亡交叉</span>');
+  const macdCross = s.indicators?.macd?.state;
+  if (macdCross === "golden_cross") tags.push('<span class="tag">MACD轉強</span>');
+  if (macdCross === "death_cross") tags.push('<span class="tag">MACD轉弱</span>');
   const valuationTags = [s.labels?.pe_label, s.labels?.pb_label]
     .filter((t) => t && t !== "相對自身歷史中等水準")
     .map((t) => `<span class="tag">${t}</span>`);
@@ -151,6 +154,7 @@ async function openDetail(stock) {
 
   const labelLines = [
     stock.labels?.ma_cross_label,
+    stock.labels?.macd_label,
     stock.labels?.rsi_label,
     stock.labels?.pe_label && `本益比：${stock.labels.pe_label}（百分位 ${stock.labels.pe_percentile}）`,
     stock.labels?.pb_label && `股價淨值比：${stock.labels.pb_label}（百分位 ${stock.labels.pb_percentile}）`,

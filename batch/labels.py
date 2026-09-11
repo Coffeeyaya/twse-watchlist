@@ -100,10 +100,25 @@ def ma_cross_label(ma_cross: Optional[dict]) -> Optional[str]:
     return _MA_CROSS_LABELS.get(ma_cross.get("state"))
 
 
+_MACD_LABELS = {
+    "golden_cross": "今日 MACD 上穿訊號線（動能轉強）",
+    "death_cross": "今日 MACD 下穿訊號線（動能轉弱）",
+    "above": "MACD 位於訊號線之上（動能偏多）",
+    "below": "MACD 位於訊號線之下（動能偏空）",
+}
+
+
+def macd_label(macd: Optional[dict]) -> Optional[str]:
+    if not macd:
+        return None
+    return _MACD_LABELS.get(macd.get("state"))
+
+
 def build_labels(history: list[dict], indicators: dict) -> dict:
     return {
         **valuation_labels(history),
         "rsi_label": rsi_label(indicators.get("rsi14")),
         "ma_cross_label": ma_cross_label(indicators.get("ma_cross")),
+        "macd_label": macd_label(indicators.get("macd")),
         "disclaimer": DISCLAIMER,
     }
