@@ -34,9 +34,11 @@ def build_dashboard_data() -> dict:
         history = history_store.load_history(code)
         ind = indicators_mod.compute_indicators(history)
         lbl = labels_mod.build_labels(history, ind)
+        change_percent = indicators_mod.compute_change_percent(row.get("close"), row.get("change"))
         stocks.append(
             {
                 **row,
+                "change_percent": change_percent,
                 "indicators": ind,
                 "labels": lbl,
             }

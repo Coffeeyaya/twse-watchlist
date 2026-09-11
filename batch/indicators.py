@@ -92,6 +92,21 @@ def compute_ma_cross(closes: list[float], short: int = 20, long: int = 60) -> di
     return {"state": "above" if today > 0 else "below", "crossed_today": False}
 
 
+def compute_change_percent(close: Optional[float], change: Optional[float]) -> Optional[float]:
+    """Percent change vs. the prior close, derived from TWSE's absolute `change` field.
+
+    TWSE's OpenAPI only reports the absolute point change (e.g. +0.9), which is hard to judge
+    without knowing the price level — the same +0.9 is a big move on a NT$25 stock and a
+    non-event on a NT$500 one. Prior close = close - change, so no extra history lookup needed.
+    """
+    if close is None or change is None:
+        return None
+    prev_close = close - change
+    if prev_close == 0:
+        return None
+    return round(change / prev_close * 100, 2)
+
+
 def compute_indicators(history: list[dict]) -> dict:
     """`history` = a stock's sorted-by-date list of {date, close, pe, pb, dividend_yield}."""
     closes = [r["close"] for r in history if r.get("close") is not None]

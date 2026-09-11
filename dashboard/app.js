@@ -116,6 +116,10 @@ function render() {
 function rowHtml(s) {
   const changeClass = s.change > 0 ? "up" : s.change < 0 ? "down" : "";
   const changeStr = s.change === null || s.change === undefined ? "—" : (s.change > 0 ? "+" : "") + s.change;
+  const changePctStr =
+    s.change_percent === null || s.change_percent === undefined
+      ? ""
+      : ` (${s.change_percent > 0 ? "+" : ""}${s.change_percent}%)`;
   const rsi = s.indicators?.rsi14;
   const tags = [];
   const cross = s.indicators?.ma_cross?.state;
@@ -129,7 +133,7 @@ function rowHtml(s) {
     <td>${s.code}</td>
     <td>${s.name ?? ""}</td>
     <td>${fmt(s.close)}</td>
-    <td class="${changeClass}">${changeStr}</td>
+    <td class="${changeClass}">${changeStr}${changePctStr}</td>
     <td>${fmt(s.pe)}</td>
     <td>${fmt(s.pb)}</td>
     <td>${fmt(s.dividend_yield, "%")}</td>
@@ -147,7 +151,14 @@ function fmt(v, suffix = "") {
 async function openDetail(stock) {
   els.overlay.classList.remove("hidden");
   els.detailTitle.textContent = `${stock.code} ${stock.name ?? ""}`;
-  els.detailSub.textContent = `資料日期：${stock.date ?? "—"}｜歷史資料 ${stock.labels?.lookback_days ?? 0} 天（自 ${stock.labels?.lookback_start_date ?? "—"}）`;
+  const changePct =
+    stock.change_percent === null || stock.change_percent === undefined
+      ? null
+      : `${stock.change_percent > 0 ? "+" : ""}${stock.change_percent}%`;
+  els.detailSub.textContent =
+    `資料日期：${stock.date ?? "—"}` +
+    (changePct ? `｜漲跌幅：${changePct}` : "") +
+    `｜歷史資料 ${stock.labels?.lookback_days ?? 0} 天（自 ${stock.labels?.lookback_start_date ?? "—"}）`;
 
   const labelLines = [
     stock.labels?.ma_cross_label,
