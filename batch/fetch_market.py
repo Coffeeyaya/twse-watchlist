@@ -7,7 +7,6 @@ excludes ETFs/warrants/bonds — see decisions.md for why this is the "any TWSE-
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 
@@ -82,9 +81,7 @@ def main() -> list[dict]:
     snapshot = fetch_today_snapshot()
     log.info("Fetched today's snapshot for %d stocks", len(snapshot))
 
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    with SNAPSHOT_PATH.open("w", encoding="utf-8") as f:
-        json.dump(snapshot, f, ensure_ascii=False, separators=(",", ":"))
+    history_store.atomic_write_json(SNAPSHOT_PATH, snapshot)
     log.info("Wrote %s", SNAPSHOT_PATH)
 
     appended = append_history(snapshot)

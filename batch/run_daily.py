@@ -37,12 +37,7 @@ def main() -> None:
 
     fetch_market.main()
     dashboard_data = write_json.build_dashboard_data()
-    import json
-    from pathlib import Path
-
-    dashboard_path = Path(__file__).resolve().parent.parent / "data" / "dashboard.json"
-    with dashboard_path.open("w", encoding="utf-8") as f:
-        json.dump(dashboard_data, f, ensure_ascii=False, separators=(",", ":"))
+    history_store.atomic_write_json(write_json.DASHBOARD_PATH, dashboard_data)
     log.info("Dashboard data written (%d stocks)", dashboard_data["stock_count"])
 
     if not _sheets_configured():

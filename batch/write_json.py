@@ -52,9 +52,7 @@ def build_dashboard_data() -> dict:
 
 def main() -> None:
     data = build_dashboard_data()
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    with DASHBOARD_PATH.open("w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+    history_store.atomic_write_json(DASHBOARD_PATH, data)
     log.info("Wrote %s (%d stocks)", DASHBOARD_PATH, data["stock_count"])
 
 
