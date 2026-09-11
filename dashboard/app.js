@@ -167,9 +167,24 @@ async function openDetail(stock) {
   }
 }
 
+// Rolling simple moving average, aligned to `closes` (null before the window fills) — mirrors
+// batch/indicators.py's compute_sma so the line matches the golden/death cross labels shown
+// alongside it.
+function computeSmaSeries(closes, window) {
+  const out = new Array(closes.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < closes.length; i++) {
+    sum += closes[i];
+    if (i >= window) sum -= closes[i - window];
+    if (i >= window - 1) out[i] = sum / window;
+  }
+  return out;
+}
+
 function drawChart(history) {
   const ctx = els.detailChart.getContext("2d");
   if (chart) chart.destroy();
+  const closes = history.map((r) => r.close);
   chart = new Chart(ctx, {
     type: "line",
     data: {
@@ -177,17 +192,41 @@ function drawChart(history) {
       datasets: [
         {
           label: "收盤價",
-          data: history.map((r) => r.close),
+          data: closes,
           borderColor: "#4f9dde",
           backgroundColor: "transparent",
           pointRadius: 0,
+          borderWidth: 1.5,
+          tension: 0.1,
+        },
+        {
+          label: "SMA20（短期均線）",
+          data: computeSmaSeries(closes, 20),
+          borderColor: "#d9a441",
+          backgroundColor: "transparent",
+          pointRadius: 0,
+          borderWidth: 1.5,
+          tension: 0.1,
+        },
+        {
+          label: "SMA60（長期均線）",
+          data: computeSmaSeries(closes, 60),
+          borderColor: "#9d7fd6",
+          backgroundColor: "transparent",
+          pointRadius: 0,
+          borderWidth: 1.5,
           tension: 0.1,
         },
       ],
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: "#8b98a5", boxWidth: 14, font: { size: 11 } },
+        },
+      },
       scales: {
         x: { ticks: { maxTicksLimit: 8, color: "#8b98a5" }, grid: { color: "#2a333b" } },
         y: { ticks: { color: "#8b98a5" }, grid: { color: "#2a333b" } },
