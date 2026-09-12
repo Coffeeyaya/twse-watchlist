@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from typing import Optional
 
 import history_store
 import twse_client
@@ -19,6 +20,33 @@ log = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 SNAPSHOT_PATH = DATA_DIR / "market_snapshot.json"
+
+# TWSE lists 1000+ common stocks (see BWIBBU_ALL universe). A response far below this floor, or a
+# sharp single-day drop from yesterday's count, is a strong signal of a partial/broken API
+# response (e.g. TWSE serving a truncated or empty payload without an HTTP error) rather than a
+# real market event — nothing plausibly delists hundreds of TWSE stocks overnight.
+MIN_STOCK_COUNT = 500
+MAX_DROP_RATIO = 0.3
+
+
+def validate_snapshot(snapshot: list[dict], previous_count: Optional[int]) -> None:
+    """Raises RuntimeError if `snapshot` looks like a partial/broken fetch, so main() never
+    overwrites market_snapshot.json or appends to per-stock history with bad data. Letting a
+    partial fetch through would silently corrupt every stock's history and skew every percentile
+    label computed from it — worse than the job simply failing loudly for a run."""
+    count = len(snapshot)
+    if count < MIN_STOCK_COUNT:
+        raise RuntimeError(
+            f"Fetched only {count} stocks, below the floor of {MIN_STOCK_COUNT} — looks like a "
+            "partial/broken TWSE API response. Refusing to write market_snapshot.json / history."
+        )
+    if previous_count and count < previous_count * (1 - MAX_DROP_RATIO):
+        drop_pct = 100 * (1 - count / previous_count)
+        raise RuntimeError(
+            f"Fetched {count} stocks, down {drop_pct:.0f}% from yesterday's {previous_count} — "
+            "looks like a partial/broken TWSE API response. Refusing to write market_snapshot.json"
+            " / history."
+        )
 
 
 def fetch_today_snapshot() -> list[dict]:
@@ -78,9 +106,19 @@ def append_history(snapshot: list[dict]) -> int:
     return appended
 
 
+def _previous_snapshot_count() -> Optional[int]:
+    if not SNAPSHOT_PATH.exists():
+        return None
+    with SNAPSHOT_PATH.open(encoding="utf-8") as f:
+        return len(json.load(f))
+
+
 def main() -> list[dict]:
+    previous_count = _previous_snapshot_count()
+
     snapshot = fetch_today_snapshot()
     log.info("Fetched today's snapshot for %d stocks", len(snapshot))
+    validate_snapshot(snapshot, previous_count)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     with SNAPSHOT_PATH.open("w", encoding="utf-8") as f:
