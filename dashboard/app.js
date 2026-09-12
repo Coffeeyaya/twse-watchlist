@@ -38,6 +38,7 @@ const els = {
     oversold: document.getElementById("filter-oversold"),
     overbought: document.getElementById("filter-overbought"),
     cheap: document.getElementById("filter-cheap"),
+    highYield: document.getElementById("filter-high-yield"),
   },
 };
 
@@ -82,6 +83,10 @@ function matchesFilters(stock) {
     const isCheap = (pe !== null && pe !== undefined && pe <= 20) ||
                      (pb !== null && pb !== undefined && pb <= 20);
     if (!isCheap) return false;
+  }
+  if (f.highYield.checked) {
+    const yieldPctl = stock.labels?.dividend_yield_percentile;
+    if (!(yieldPctl !== null && yieldPctl !== undefined && yieldPctl >= 80)) return false;
   }
   return true;
 }
