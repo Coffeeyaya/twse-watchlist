@@ -46,6 +46,17 @@ header h1 { margin: 0 0 8px; font-size: 22px; }
 }
 .branch-banner.hidden { display: none; }
 
+.stale-banner {
+  background: rgba(229, 72, 77, 0.15);
+  border: 1px solid var(--up);
+  color: var(--up);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 4px 0;
+}
+.stale-banner.hidden { display: none; }
+
 main { padding: 16px 20px 40px; max-width: 1200px; margin: 0 auto; }
 
 .controls {
