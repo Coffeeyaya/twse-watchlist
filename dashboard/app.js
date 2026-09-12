@@ -38,6 +38,8 @@ const els = {
     oversold: document.getElementById("filter-oversold"),
     overbought: document.getElementById("filter-overbought"),
     cheap: document.getElementById("filter-cheap"),
+    near52wHigh: document.getElementById("filter-near-52w-high"),
+    near52wLow: document.getElementById("filter-near-52w-low"),
   },
 };
 
@@ -83,6 +85,15 @@ function matchesFilters(stock) {
                      (pb !== null && pb !== undefined && pb <= 20);
     if (!isCheap) return false;
   }
+  const range52w = stock.indicators?.range_52w;
+  if (f.near52wHigh.checked) {
+    const p = range52w?.pct_from_high;
+    if (!(p !== null && p !== undefined && p >= -5)) return false;
+  }
+  if (f.near52wLow.checked) {
+    const p = range52w?.pct_from_low;
+    if (!(p !== null && p !== undefined && p <= 5)) return false;
+  }
   return true;
 }
 
@@ -124,6 +135,7 @@ function rowHtml(s) {
   const valuationTags = [s.labels?.pe_label, s.labels?.pb_label]
     .filter((t) => t && t !== "相對自身歷史中等水準")
     .map((t) => `<span class="tag">${t}</span>`);
+  if (s.labels?.range_52w_label) valuationTags.push(`<span class="tag">${s.labels.range_52w_label}</span>`);
 
   return `<tr>
     <td>${s.code}</td>
@@ -155,6 +167,8 @@ async function openDetail(stock) {
     stock.labels?.pe_label && `本益比：${stock.labels.pe_label}（百分位 ${stock.labels.pe_percentile}）`,
     stock.labels?.pb_label && `股價淨值比：${stock.labels.pb_label}（百分位 ${stock.labels.pb_percentile}）`,
     stock.labels?.dividend_yield_label && `殖利率：${stock.labels.dividend_yield_label}（百分位 ${stock.labels.dividend_yield_percentile}）`,
+    stock.labels?.range_52w_label &&
+      `${stock.labels.range_52w_label}（區間高 ${stock.indicators?.range_52w?.high}／低 ${stock.indicators?.range_52w?.low}）`,
   ].filter(Boolean);
   els.detailLabels.innerHTML = labelLines.map((l) => `<div>${l}</div>`).join("");
 

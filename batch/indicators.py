@@ -68,6 +68,27 @@ def compute_macd(
     }
 
 
+def compute_52w_range(closes: list[float], window: int = 252) -> Optional[dict]:
+    """Where today's close sits within its own trailing high/low range. `window` is trading days
+    (252 ~= 1 TWSE trading year); uses whatever history has accumulated if shorter than that, so
+    `period_days` says exactly how much the range is backed by (mirrors labels.valuation_labels'
+    lookback fields — same "don't silently overclaim" reasoning). None below a 20-day floor,
+    where "high/low" wouldn't mean much yet."""
+    if len(closes) < 20:
+        return None
+    lookback = closes[-window:]
+    current = closes[-1]
+    high = max(lookback)
+    low = min(lookback)
+    return {
+        "period_days": len(lookback),
+        "high": round(high, 4),
+        "low": round(low, 4),
+        "pct_from_high": round((current - high) / high * 100, 2) if high else None,
+        "pct_from_low": round((current - low) / low * 100, 2) if low else None,
+    }
+
+
 def compute_ma_cross(closes: list[float], short: int = 20, long: int = 60) -> dict:
     if len(closes) < long:
         return {"state": "insufficient_data", "crossed_today": False}
@@ -102,4 +123,5 @@ def compute_indicators(history: list[dict]) -> dict:
         "rsi14": compute_rsi(closes, 14),
         "macd": compute_macd(closes),
         "ma_cross": compute_ma_cross(closes),
+        "range_52w": compute_52w_range(closes),
     }
