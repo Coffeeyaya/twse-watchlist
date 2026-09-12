@@ -68,6 +68,28 @@ def compute_macd(
     }
 
 
+def compute_52w_range(closes: list[float], window: int = 252) -> Optional[dict]:
+    """52-week high/low, using the trailing `window` trading days (~252 = 1 year) of history
+    actually available. Returns None only when there's no close at all. `window_days` reports
+    how many days actually backed the number, so a stock with under a year of history doesn't
+    silently get labeled against a full 52-week range it doesn't have yet."""
+    if not closes:
+        return None
+    window_closes = closes[-window:]
+    latest = window_closes[-1]
+    high = max(window_closes)
+    low = min(window_closes)
+    return {
+        "window_days": len(window_closes),
+        "high": high,
+        "low": low,
+        "pct_from_high": round((latest - high) / high * 100, 2),
+        "pct_from_low": round((latest - low) / low * 100, 2),
+        "is_52w_high": latest >= high,
+        "is_52w_low": latest <= low,
+    }
+
+
 def compute_ma_cross(closes: list[float], short: int = 20, long: int = 60) -> dict:
     if len(closes) < long:
         return {"state": "insufficient_data", "crossed_today": False}
@@ -102,4 +124,5 @@ def compute_indicators(history: list[dict]) -> dict:
         "rsi14": compute_rsi(closes, 14),
         "macd": compute_macd(closes),
         "ma_cross": compute_ma_cross(closes),
+        "range_52w": compute_52w_range(closes),
     }
