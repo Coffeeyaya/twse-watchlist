@@ -68,6 +68,28 @@ def compute_macd(
     }
 
 
+def compute_bollinger(closes: list[float], window: int = 20, num_std: float = 2.0) -> Optional[dict]:
+    """Bollinger Bands on the close series: SMA `window` +/- `num_std` standard deviations.
+
+    `percent_b` is the latest close's position within the band (0 = at the lower band, 1 = at the
+    upper band; it can go outside [0, 1] when price breaks through a band)."""
+    if len(closes) < window:
+        return None
+    recent = closes[-window:]
+    middle = sum(recent) / window
+    variance = sum((c - middle) ** 2 for c in recent) / window
+    std = variance**0.5
+    upper = middle + num_std * std
+    lower = middle - num_std * std
+    percent_b = None if upper == lower else (closes[-1] - lower) / (upper - lower)
+    return {
+        "middle": round(middle, 4),
+        "upper": round(upper, 4),
+        "lower": round(lower, 4),
+        "percent_b": round(percent_b, 4) if percent_b is not None else None,
+    }
+
+
 def compute_ma_cross(closes: list[float], short: int = 20, long: int = 60) -> dict:
     if len(closes) < long:
         return {"state": "insufficient_data", "crossed_today": False}
@@ -102,4 +124,5 @@ def compute_indicators(history: list[dict]) -> dict:
         "rsi14": compute_rsi(closes, 14),
         "macd": compute_macd(closes),
         "ma_cross": compute_ma_cross(closes),
+        "bollinger": compute_bollinger(closes),
     }
