@@ -38,6 +38,7 @@ const els = {
     oversold: document.getElementById("filter-oversold"),
     overbought: document.getElementById("filter-overbought"),
     cheap: document.getElementById("filter-cheap"),
+    volumeSpike: document.getElementById("filter-volume-spike"),
   },
 };
 
@@ -83,6 +84,10 @@ function matchesFilters(stock) {
                      (pb !== null && pb !== undefined && pb <= 20);
     if (!isCheap) return false;
   }
+  if (f.volumeSpike.checked) {
+    const ratio = stock.indicators?.volume_ratio_20;
+    if (!(ratio !== null && ratio !== undefined && ratio >= 2.0)) return false;
+  }
   return true;
 }
 
@@ -124,6 +129,11 @@ function rowHtml(s) {
   const valuationTags = [s.labels?.pe_label, s.labels?.pb_label]
     .filter((t) => t && t !== "相對自身歷史中等水準")
     .map((t) => `<span class="tag">${t}</span>`);
+  const volumeRatio = s.indicators?.volume_ratio_20;
+  const volumeTag =
+    volumeRatio !== null && volumeRatio !== undefined && (volumeRatio >= 2.0 || volumeRatio <= 0.5)
+      ? `<span class="tag">${volumeRatio >= 2.0 ? "放大" : "萎縮"} ${volumeRatio}x</span>`
+      : "—";
 
   return `<tr>
     <td>${s.code}</td>
@@ -136,6 +146,7 @@ function rowHtml(s) {
     <td>${fmt(rsi)}</td>
     <td>${tags.join("") || "—"}</td>
     <td>${valuationTags.join("") || "—"}</td>
+    <td>${volumeTag}</td>
   </tr>`;
 }
 
@@ -155,6 +166,7 @@ async function openDetail(stock) {
     stock.labels?.pe_label && `本益比：${stock.labels.pe_label}（百分位 ${stock.labels.pe_percentile}）`,
     stock.labels?.pb_label && `股價淨值比：${stock.labels.pb_label}（百分位 ${stock.labels.pb_percentile}）`,
     stock.labels?.dividend_yield_label && `殖利率：${stock.labels.dividend_yield_label}（百分位 ${stock.labels.dividend_yield_percentile}）`,
+    stock.labels?.volume_label,
   ].filter(Boolean);
   els.detailLabels.innerHTML = labelLines.map((l) => `<div>${l}</div>`).join("");
 

@@ -72,6 +72,7 @@ def append_history(snapshot: list[dict]) -> int:
                 "pe": row.get("pe"),
                 "pb": row.get("pb"),
                 "dividend_yield": row.get("dividend_yield"),
+                "volume": row.get("volume"),
             },
         )
         appended += 1
