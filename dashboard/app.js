@@ -152,6 +152,7 @@ async function openDetail(stock) {
   const labelLines = [
     stock.labels?.ma_cross_label,
     stock.labels?.rsi_label,
+    stock.labels?.kd_label,
     stock.labels?.pe_label && `本益比：${stock.labels.pe_label}（百分位 ${stock.labels.pe_percentile}）`,
     stock.labels?.pb_label && `股價淨值比：${stock.labels.pb_label}（百分位 ${stock.labels.pb_percentile}）`,
     stock.labels?.dividend_yield_label && `殖利率：${stock.labels.dividend_yield_label}（百分位 ${stock.labels.dividend_yield_percentile}）`,

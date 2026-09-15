@@ -1,9 +1,10 @@
 """Per-stock historical record store: data/history/<code>.json, one JSON array per stock.
 
-Kept intentionally minimal (date, close, pe, pb, dividend_yield only) — this is what
-indicators.py/labels.py need for SMA/RSI/MACD and valuation percentiles. Today's full OHLC lives
-only in data/market_snapshot.json, not accumulated here (see decisions.md in the coordination
-project for why).
+Kept intentionally minimal — date, close, pe, pb, dividend_yield, plus optional high/low (needed
+by compute_stochastic's KD calculation; records written before that field existed simply omit it,
+and indicators.py treats it as absent history for that day rather than erroring). Today's full
+OHLC lives in data/market_snapshot.json; only what indicators.py/labels.py actually need gets
+accumulated here (see decisions.md in the coordination project for why).
 """
 
 from __future__ import annotations

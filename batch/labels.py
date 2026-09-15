@@ -100,10 +100,26 @@ def ma_cross_label(ma_cross: Optional[dict]) -> Optional[str]:
     return _MA_CROSS_LABELS.get(ma_cross.get("state"))
 
 
+def kd_label(kd: Optional[dict]) -> Optional[str]:
+    if not kd:
+        return None
+    if kd.get("crossed_today"):
+        if kd.get("cross") == "golden_cross":
+            return "KD出現黃金交叉（K值由下往上穿越D值）"
+        if kd.get("cross") == "death_cross":
+            return "KD出現死亡交叉（K值由上往下穿越D值）"
+    if kd.get("state") == "overbought":
+        return "KD顯示超買"
+    if kd.get("state") == "oversold":
+        return "KD顯示超賣"
+    return "KD中性"
+
+
 def build_labels(history: list[dict], indicators: dict) -> dict:
     return {
         **valuation_labels(history),
         "rsi_label": rsi_label(indicators.get("rsi14")),
         "ma_cross_label": ma_cross_label(indicators.get("ma_cross")),
+        "kd_label": kd_label(indicators.get("kd")),
         "disclaimer": DISCLAIMER,
     }

@@ -59,7 +59,7 @@ def fetch_today_snapshot() -> list[dict]:
 
 
 def append_history(snapshot: list[dict]) -> int:
-    """Appends today's compact {date, close, pe, pb, dividend_yield} record per stock."""
+    """Appends today's compact {date, close, high, low, pe, pb, dividend_yield} record per stock."""
     appended = 0
     for row in snapshot:
         if row.get("close") is None:
@@ -69,6 +69,8 @@ def append_history(snapshot: list[dict]) -> int:
             {
                 "date": row["date"],
                 "close": row["close"],
+                "high": row.get("high"),
+                "low": row.get("low"),
                 "pe": row.get("pe"),
                 "pb": row.get("pb"),
                 "dividend_yield": row.get("dividend_yield"),
