@@ -85,6 +85,18 @@ def rsi_label(rsi14: Optional[float]) -> Optional[str]:
     return "RSI 中性"
 
 
+def bollinger_label(bollinger: Optional[dict]) -> Optional[str]:
+    """Descriptive label for the close's position relative to its 20-day Bollinger Bands."""
+    if not bollinger or bollinger.get("percent_b") is None:
+        return None
+    percent_b = bollinger["percent_b"]
+    if percent_b >= 1:
+        return "股價觸及或突破布林通道上緣（20日）"
+    if percent_b <= 0:
+        return "股價觸及或跌破布林通道下緣（20日）"
+    return "股價位於布林通道區間內（20日）"
+
+
 _MA_CROSS_LABELS = {
     "golden_cross": "今日出現黃金交叉（20日均線上穿60日均線）",
     "death_cross": "今日出現死亡交叉（20日均線下穿60日均線）",
@@ -105,5 +117,6 @@ def build_labels(history: list[dict], indicators: dict) -> dict:
         **valuation_labels(history),
         "rsi_label": rsi_label(indicators.get("rsi14")),
         "ma_cross_label": ma_cross_label(indicators.get("ma_cross")),
+        "bollinger_label": bollinger_label(indicators.get("bollinger")),
         "disclaimer": DISCLAIMER,
     }
