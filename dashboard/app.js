@@ -38,6 +38,8 @@ const els = {
     oversold: document.getElementById("filter-oversold"),
     overbought: document.getElementById("filter-overbought"),
     cheap: document.getElementById("filter-cheap"),
+    near52wHigh: document.getElementById("filter-near-52w-high"),
+    near52wLow: document.getElementById("filter-near-52w-low"),
   },
 };
 
@@ -83,6 +85,8 @@ function matchesFilters(stock) {
                      (pb !== null && pb !== undefined && pb <= 20);
     if (!isCheap) return false;
   }
+  if (f.near52wHigh.checked && stock.labels?.range_52w_label !== "接近52週最高價") return false;
+  if (f.near52wLow.checked && stock.labels?.range_52w_label !== "接近52週最低價") return false;
   return true;
 }
 
@@ -121,6 +125,7 @@ function rowHtml(s) {
   const cross = s.indicators?.ma_cross?.state;
   if (cross === "golden_cross") tags.push('<span class="tag">黃金交叉</span>');
   if (cross === "death_cross") tags.push('<span class="tag">死亡交叉</span>');
+  if (s.labels?.range_52w_label) tags.push(`<span class="tag">${s.labels.range_52w_label}</span>`);
   const valuationTags = [s.labels?.pe_label, s.labels?.pb_label]
     .filter((t) => t && t !== "相對自身歷史中等水準")
     .map((t) => `<span class="tag">${t}</span>`);
@@ -149,9 +154,12 @@ async function openDetail(stock) {
   els.detailTitle.textContent = `${stock.code} ${stock.name ?? ""}`;
   els.detailSub.textContent = `資料日期：${stock.date ?? "—"}｜歷史資料 ${stock.labels?.lookback_days ?? 0} 天（自 ${stock.labels?.lookback_start_date ?? "—"}）`;
 
+  const range52w = stock.indicators?.range_52w;
   const labelLines = [
     stock.labels?.ma_cross_label,
     stock.labels?.rsi_label,
+    stock.labels?.range_52w_label,
+    range52w && `52週區間：${range52w.low} ~ ${range52w.high}（距最高 ${range52w.pct_from_high}%／距最低 ${range52w.pct_from_low}%，${range52w.window_days} 個交易日）`,
     stock.labels?.pe_label && `本益比：${stock.labels.pe_label}（百分位 ${stock.labels.pe_percentile}）`,
     stock.labels?.pb_label && `股價淨值比：${stock.labels.pb_label}（百分位 ${stock.labels.pb_percentile}）`,
     stock.labels?.dividend_yield_label && `殖利率：${stock.labels.dividend_yield_label}（百分位 ${stock.labels.dividend_yield_percentile}）`,

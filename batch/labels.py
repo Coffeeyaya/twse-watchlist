@@ -100,10 +100,29 @@ def ma_cross_label(ma_cross: Optional[dict]) -> Optional[str]:
     return _MA_CROSS_LABELS.get(ma_cross.get("state"))
 
 
+_NEAR_RANGE_PCT = 5.0
+
+
+def range_52w_label(range_52w: Optional[dict]) -> Optional[str]:
+    """Only speaks up when today's close is within `_NEAR_RANGE_PCT`% of the 52-week high or
+    low — a purely descriptive proximity note, never both at once since a window needs at least
+    two distinct closes for that to happen."""
+    if not range_52w:
+        return None
+    pct_from_high = range_52w.get("pct_from_high")
+    pct_from_low = range_52w.get("pct_from_low")
+    if pct_from_high is not None and pct_from_high >= -_NEAR_RANGE_PCT:
+        return "接近52週最高價"
+    if pct_from_low is not None and pct_from_low <= _NEAR_RANGE_PCT:
+        return "接近52週最低價"
+    return None
+
+
 def build_labels(history: list[dict], indicators: dict) -> dict:
     return {
         **valuation_labels(history),
         "rsi_label": rsi_label(indicators.get("rsi14")),
         "ma_cross_label": ma_cross_label(indicators.get("ma_cross")),
+        "range_52w_label": range_52w_label(indicators.get("range_52w")),
         "disclaimer": DISCLAIMER,
     }
