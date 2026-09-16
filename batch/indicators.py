@@ -68,6 +68,55 @@ def compute_macd(
     }
 
 
+def compute_stochastic(history: list[dict], period: int = 9) -> Optional[dict]:
+    """Stochastic oscillator (KD), Taiwan-brokerage convention: raw %K (RSV) over a `period`-day
+    high/low range, then K/D smoothed with a 2/3-1/3 weighted moving average seeded at 50 — the
+    method taught in Taiwan retail technical-analysis material, distinct from the plain
+    SMA-of-RSV method used elsewhere. Needs `high`/`low` in history records (added alongside
+    `volume`); records missing either are skipped, so this returns `None` until `period` days of
+    high/low-bearing history have accumulated after this ships (same ramp-up as
+    compute_volume_ratio for `volume`).
+    """
+    triples = [
+        (r["high"], r["low"], r["close"])
+        for r in history
+        if r.get("high") is not None and r.get("low") is not None and r.get("close") is not None
+    ]
+    if len(triples) < period:
+        return None
+
+    k = d = 50.0
+    k_prev = d_prev = None
+    for i in range(period - 1, len(triples)):
+        window = triples[i - period + 1 : i + 1]
+        highest = max(h for h, _, _ in window)
+        lowest = min(l for _, l, _ in window)
+        close = triples[i][2]
+        rsv = 50.0 if highest == lowest else (close - lowest) / (highest - lowest) * 100
+        k_prev, d_prev = k, d
+        k = (2 / 3) * k + (1 / 3) * rsv
+        d = (2 / 3) * d + (1 / 3) * k
+
+    state = "overbought" if k >= 80 else "oversold" if k <= 20 else "neutral"
+    cross = None
+    crossed_today = False
+    if k_prev is not None:
+        prev_diff = k_prev - d_prev
+        today_diff = k - d
+        if prev_diff <= 0 < today_diff:
+            cross, crossed_today = "golden_cross", True
+        elif prev_diff >= 0 > today_diff:
+            cross, crossed_today = "death_cross", True
+
+    return {
+        "k": round(k, 2),
+        "d": round(d, 2),
+        "state": state,
+        "cross": cross,
+        "crossed_today": crossed_today,
+    }
+
+
 def compute_ma_cross(closes: list[float], short: int = 20, long: int = 60) -> dict:
     if len(closes) < long:
         return {"state": "insufficient_data", "crossed_today": False}
@@ -102,4 +151,5 @@ def compute_indicators(history: list[dict]) -> dict:
         "rsi14": compute_rsi(closes, 14),
         "macd": compute_macd(closes),
         "ma_cross": compute_ma_cross(closes),
+        "kd": compute_stochastic(history),
     }

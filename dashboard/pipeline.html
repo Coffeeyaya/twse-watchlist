@@ -356,7 +356,7 @@ flowchart TD
     <div class="panel" style="padding: 0.2rem 1.2rem;">
       <ol class="steps">
         <li><span class="step-num">1</span><span>&nbsp;<strong>fetch_market.py</strong> pulls today's OHLC + valuation for every TWSE-listed stock in two bulk calls, writes <code>market_snapshot.json</code>, appends one record per stock to <code>history/{code}.json</code>.</span></li>
-        <li><span class="step-num">2</span><span>&nbsp;<strong>write_json.py</strong> joins the snapshot with history, runs <strong>indicators.py</strong> (SMA20/60, RSI14, MACD, MA cross) and <strong>labels.py</strong> (percentile valuation words) per stock, writes <code>dashboard.json</code>.</span></li>
+        <li><span class="step-num">2</span><span>&nbsp;<strong>write_json.py</strong> joins the snapshot with history, runs <strong>indicators.py</strong> (SMA20/60, RSI14, MACD, MA cross, KD) and <strong>labels.py</strong> (percentile valuation words) per stock, writes <code>dashboard.json</code>.</span></li>
         <li><span class="step-num">3</span><span>&nbsp;If Sheets secrets are set: <strong>write_sheet.py</strong> reads the watchlist tickers from <code>自選清單</code>, overwrites <code>全市場</code> and <code>自選股詳情</code>.</span></li>
         <li><span class="step-num">4</span><span>&nbsp;For each watchlist ticker, <strong>fetch_watchlist_news.py</strong> queries Google News RSS by company name.</span></li>
         <li><span class="step-num">5</span><span>&nbsp;<strong>write_sheet.write_watchlist_news()</strong> writes one row per news item to <code>自選股新聞</code>. <em>Only on the branch behind PR #5 &mdash; not on <code>main</code> yet.</em></span></li>
